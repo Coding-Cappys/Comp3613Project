@@ -7,6 +7,16 @@ from App.models import Student
 from App.models import Staff
 from App.models import Request
 from App.main import create_app
+from App.controllers.student_controller import register_student
+from App.controllers.student_controller import get_approved_hours
+from App.controllers.student_controller import create_hours_request
+from App.controllers.student_controller import fetch_requests
+from App.controllers.student_controller import fetch_accolades
+from App.controllers.student_controller import generate_leaderboard
+from App.controllers.staff_controller import register_staff
+from App.controllers.staff_controller import fetch_all_requests
+from App.controllers.staff_controller import process_request_approval
+from App.controllers.staff_controller import process_request_denial
 from App.controllers import ( create_user, get_all_users_json, get_all_users, initialize )
 
 
@@ -107,24 +117,32 @@ student_cli = AppGroup('student', help='Student object commands')
 
 def hours ():
     print("\n")
-    student_id = int(input("Enter your student ID: "))
+    try:
+        student_id = int(input("Enter your student ID: "))
 
-    student = Student.query.get(student_id)
-    if not student:
-        print(f"Student with id {student_id} not found.")
-        return
-    total_hours = sum(lh.hours for lh in student.loggedhours if lh.status == 'approved')
-    print(f"Total approved hours for {student.name}: {total_hours}")
+        student = get_approved_hours(student_id)
+
+        name,total_hours = student
+        print(f"Total approved hours for {name}: {total_hours}")
+            
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     print("\n")
 
 #Command to create a new student (name, email)
 @student_cli.command("create", help="Create a new student")
 def create_student():
     print("\n")
-    name = input("Enter student name: ")
-    email = input("Enter student email: ")
-    student = Student.create_student(name, email)
-    print(f"Created student: {student}")
+    try:
+        name = input("Enter student name: ")
+        email = input("Enter student email: ")
+        student = register_student(name, email)
+
+        print(f"Created student: {student}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     print("\n")
 
 
@@ -133,18 +151,20 @@ def create_student():
 #Command for student to request hour confirmation (student_id, hours)
 @student_cli.command("requestHours", help="Student requests hour confirmation (interactive)")
 def requestHours():
-
     print("\n")
-    student_id = int(input("Enter your student ID: "))
-    hours = float(input("Enter the number of hours to request: "))
+    try:
+        student_id = int(input("Enter your student ID: "))
+        hours = float(input("Enter the number of hours to request: "))
     
-    
-    student = Student.query.get(student_id)
-    if not student:
-        print(f"Student with id {student_id} not found.")
-        return
-    req = student.request_hours_confirmation(hours)
-    print(f"Requested {hours} hours for confirmation. Request ID: {req.id}, Status: {req.status}")
+        req = create_hours_request(student_id,hours)
+        print(f"Requested {hours} hours for confirmation.\n")
+        print(f"Request ID: {req.id}, Status: {req.status}")
+
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
     print("\n")
 
 
@@ -152,15 +172,22 @@ def requestHours():
 @student_cli.command("viewmyRequests", help="List all requests for a student")
 def viewmyRequests():
     print("\n")
-    student_id = int(input("Enter your student ID: "))
-    student = Student.query.get(student_id)
-    if not student:
-        print(f"Student with id {student_id} not found.")
-        return
-    if not student.requests:
-        print(f"No requests found for student {student_id}.")
-    for req in student.requests:
-        print(req)
+    try:
+        student_id = int(input("Enter your student ID: "))
+        requests = fetch_requests(student_id)
+
+        if not requests:
+            print(f"No requests found for student {student_id}.")
+            return
+        else:
+            print(f"Requests for student {student_id}:")
+            for req in requests:
+                print(req)
+    
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     print("\n")
 
 
@@ -168,18 +195,22 @@ def viewmyRequests():
 @student_cli.command("viewmyAccolades", help="List all accolades for a student")
 def viewmyAccolades():
     print("\n")
-    student_id = int(input("Enter your student ID: "))
-    student = Student.query.get(student_id)
-    if not student:
-        print(f"Student with id {student_id} not found.")
-        return
-    accolades = student.accolades()
-    if not accolades:
-        print(f"No accolades found for student {student_id}.")
-    else:
-        print(f"Accolades for student {student_id}:")
-        for accolade in accolades:
-            print(f"- {accolade}")
+    try:
+        student_id = int(input("Enter your student ID: "))
+        accolades = fetch_accolades(student_id)
+
+        if not accolades:
+            print(f"No accolades found for student {student_id}.")
+            return
+        else:
+            print(f"Accolades for student {student_id}:")
+            for accolade in accolades:
+                print(f"- {accolade}")
+
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     print("\n")
 
 
@@ -187,12 +218,18 @@ def viewmyAccolades():
 @student_cli.command("viewLeaderboard", help="View leaderboard of students by approved hours")
 def viewLeaderboard():
     print("\n")
-    students = Student.query.all()
-    leaderboard = sorted(students, key=lambda s: sum(lh.hours for lh in s.loggedhours if lh.status == 'approved'), reverse=True)
-    print("Leaderboard (by approved hours):")
-    for rank, student in enumerate(leaderboard, 1):
-        total_hours = sum(lh.hours for lh in student.loggedhours if lh.status == 'approved')
-        print(f"{rank:<6}. {student.name:<10} ------ \t{total_hours} hours")
+    try:
+        leaderboard = generate_leaderboard()
+
+        print("Leaderboard (by approved hours):")
+        if not leaderboard:
+            print("No students found or hour data found.")
+            return
+        for rank, data in enumerate(leaderboard, 1):
+            print(f"{rank:<6}. {data['name']:<10} ------ \t{data['hours']} hours")
+
+    except Exception as e:
+        print(f"An error occurred while generating the leaderboard: {e}")
     print("\n")
 
 app.cli.add_command(student_cli) # add the group to the cli
@@ -210,54 +247,65 @@ staff_cli = AppGroup('staff', help='Staff object commands')
 @staff_cli.command("create", help="Create a new staff member")
 def create_staff():
     print("\n")
-    name = input("Enter staff name: ")
-    email = input("Enter staff email: ")
-    staff = Staff.create_staff(name, email)
-    print(f"Created staff member: {staff}")
+    try:
+        name = input("Enter staff name: ")
+        email = input("Enter staff email: ")
+        staff = register_staff(name, email)
+
+        print(f"Created staff member: {staff}")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
     print("\n")
 
 
 #Command for staff to view all pending requests
 @staff_cli.command("requests", help="View all pending hour requests")
 def requests():
-    from App.models import Request, Student
-    pending_requests = Request.query.filter_by(status='pending').all()
-    if not pending_requests:
-        print("No pending requests found.")
-        return
-    print("\n\nPending Requests:")
-    for req in pending_requests:
-        student = Student.query.get(req.student_id)
-        student_name = student.name if student else "Unknown"
-        print(f"Request ID: {req.id:<4} Student: {student_name:<10} Hours: {req.hours:<7}  Status: {req.status}")
+    try:
+        pending_requests = fetch_all_requests()
+        if not pending_requests:
+            print("No pending requests found.")
+            return
+        
+        print("\n\nPending Requests:")
+        for req in pending_requests:
+            print(f"Request ID: {req['id']:<4} "
+                  f"Student: {req['student_name']:<10} "
+                  f"Hours: {req['hours']:<7} \t"
+                  f" Status: {req['status']}")
     
-    print("\n")
+        print("\n")
+
+    except Exception as e:
+        print(f"An error occurred while fetching requests: {e}")
 
 
 #Command for staff to approve a student's request (staff_id, request_id)
 #Once approved it is added to logged hours database
 @staff_cli.command("approveRequest", help="Staff approves a student's request")
 def approveRequest():
-
     print("\n")
-    staff_id = int(input("Enter your staff ID: "))
-    request_id = int(input("Enter the request ID to approve: "))
+    try:
+        staff_id = int(input("Enter your staff ID: "))
+        request_id = int(input("Enter the request ID to approve: "))
 
-    staff = Staff.query.get(staff_id)
-    if not staff:
-        print(f"Staff with id {staff_id} not found.")
-        return
-    request = Request.query.get(request_id)
-    if not request:
-        print(f"Request with id {request_id} not found.")
-        return
-    student = Student.query.get(request.student_id)
-    student_name = student.name 
-    logged = staff.approve_request(request)
-    if logged:
-        print(f"Request {request_id} for {request.hours} hours made by {student_name} approved by Staff {staff.name} (ID: {staff_id}). Logged Hours ID: {logged.id}")
-    else:
-        print(f"Request {request_id} for {request.hours} hours made by {student_name} could not be approved (Already Processed).")
+        results = process_request_approval(staff_id,request_id)
+    
+        req=results['request']
+        student_name=results['student_name']
+        staff_name=results['staff_name']
+        logged=results['logged_hours']
+
+        if logged:
+            print(f"Request {request_id} for {req.hours} hours made by {student_name} approved by Staff {staff_name} (ID: {staff_id}). Logged Hours ID: {logged.id}")
+        else:
+            print(f"Request {request_id} for {req.hours} hours made by {student_name} could not be approved (Already Processed).")
+    
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     print("\n")
 
 
@@ -267,37 +315,45 @@ def approveRequest():
 @staff_cli.command("denyRequest", help="Staff denies a student's request") 
 def denyRequest():
     print("\n")
-    staff_id = int(input("Enter your staff ID: "))
-    request_id = int(input("Enter the request ID to deny: "))
+    try:
+        staff_id = int(input("Enter your staff ID: "))
+        request_id = int(input("Enter the request ID to deny: "))
 
-    staff = Staff.query.get(staff_id)
-    if not staff:
-        print(f"Staff with id {staff_id} not found.")
-        return
-    request = Request.query.get(request_id)
-    if not request:
-        print(f"Request with id {request_id} not found.")
-        return
-    student = Student.query.get(request.student_id)
-    student_name = student.name
-    success = staff.deny_request(request)
-    if success:
-        print(f"Request {request_id} for {request.hours} hours made by {student_name} denied by Staff {staff.name} (ID: {staff_id}).")
-    else:
-        print(f"Request {request_id} for {request.hours} hours made by {student_name} could not be denied (Already Processed).")
+        results = process_request_denial(staff_id,request_id)
+
+        req=results['request']
+        student_name=results['student_name']
+        staff_name=results['staff_name']
+        success=results['denial_successful']
+
+        if success:
+            print(f"Request {request_id} for {req.hours} hours made by {student_name} denied by Staff {staff_name} (ID: {staff_id}).")
+        else:
+            print(f"Request {request_id} for {req.hours} hours made by {student_name} could not be denied (Already Processed).")
+    
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     print("\n")
 
 
 #staff command to view leaderboard of students by approved hours
 @staff_cli.command("viewLeaderboard", help="View leaderboard of students by approved hours")
 def viewLeaderboard():
-    students = Student.query.all()
-    leaderboard = sorted(students, key=lambda s: sum(lh.hours for lh in s.loggedhours if lh.status == 'approved'), reverse=True)
     print("\n")
-    print("Leaderboard (by approved hours):")
-    for rank, student in enumerate(leaderboard, 1):
-        total_hours = sum(lh.hours for lh in student.loggedhours if lh.status == 'approved')
-        print(f"{rank:<6}. {student.name:<10} ------ \t{total_hours} hours")
+    try:
+        leaderboard = generate_leaderboard()
+
+        print("Leaderboard (by approved hours):")
+        if not leaderboard:
+            print("No students found or hour data found.")
+            return
+        for rank, data in enumerate(leaderboard, 1):
+            print(f"{rank:<6}. {data['name']:<10} ------ \t{data['hours']} hours")
+
+    except Exception as e:
+        print(f"An error occurred while generating the leaderboard: {e}")
     print("\n")
 
 app.cli.add_command(staff_cli) # add the group to the cli
