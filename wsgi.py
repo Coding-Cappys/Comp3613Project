@@ -7,16 +7,9 @@ from App.models import Student
 from App.models import Staff
 from App.models import Request
 from App.main import create_app
-from App.controllers.student_controller import register_student
-from App.controllers.student_controller import get_approved_hours
-from App.controllers.student_controller import create_hours_request
-from App.controllers.student_controller import fetch_requests
-from App.controllers.student_controller import fetch_accolades
-from App.controllers.student_controller import generate_leaderboard
-from App.controllers.staff_controller import register_staff
-from App.controllers.staff_controller import fetch_all_requests
-from App.controllers.staff_controller import process_request_approval
-from App.controllers.staff_controller import process_request_denial
+from App.controllers.student_controller import *
+from App.controllers.staff_controller import *
+from App.controllers.app_controller import *
 from App.controllers import ( create_user, get_all_users_json, get_all_users, initialize )
 
 
@@ -35,76 +28,51 @@ def init():
     print('database intialized')
 
 
+@app.cli.command("listUsers", help="Lists all users in the database")
+def listUsers():
+    listAllUsers()
+
 
 #Comamand to list all staff in the database
 @app.cli.command ("listStaff", help="Lists all staff in the database")
 def listStaff():
-    print("\n")
-    staff = Staff.query.all()
-    for member in staff:
-        print(member)
-    print("\n")
+    printAllStaff()
 
 
 #Comamand to list all students in the database
 @app.cli.command ("listStudents", help="Lists all students in the database")
 def listStudents():
-    print("\n")
-    students = Student.query.all()
-    for student in students:
-        print(student)
-    print("\n")
+    printAllStudents()
 
 
 #Comamand to list all requests in the database
 @app.cli.command ("listRequests", help="Lists all requests in the database")
 def listRequests():
-    print("\nAll Requests:")
-    requests = Request.query.all()
-    for request in requests:
-        print(request)
-    print("\n")
+    listAllRequests()
 
 
 #Comamand to list all approved requests in the database
 @app.cli.command ("listApprovedRequests", help="Lists all approved requests in the database")
 def listApprovedRequests():
-    print("\nApproved Requests:")
-    requests = Request.query.filter_by(status='approved').all()
-    for request in requests:
-        print(request)
-    print("\n")
+    listAllApprovedRequests()
 
 
 #Comamand to list all pending requests in the database
 @app.cli.command ("listPendingRequests", help="Lists all pending requests in the database")
 def listPendingRequests():
-    print("\nPending Requests:")
-    requests = Request.query.filter_by(status='pending').all()
-    for request in requests:
-        print(request)
-    print("\n")
+    listAllPendingRequests()
 
 
 #Comamand to list all denied requests in the database
 @app.cli.command ("listDeniedRequests", help="Lists all denied requests in the database")
 def listDeniedRequests():
-    print("\nDenied Requests:")
-    requests = Request.query.filter_by(status='denied').all()
-    for request in requests:
-        print(request)
-    print("\n")
+    listAllDeniedRequests()
 
 
 #Comamand to list all logged hours in the database
 @app.cli.command ("listloggedHours", help="Lists all logged hours in the database")
 def listloggedHours():
-    print("\n")
-    from App.models import LoggedHours
-    logs = LoggedHours.query.all()
-    for log in logs:
-        print(log)
-    print("\n")
+    listAllloggedHours()
 
 
 

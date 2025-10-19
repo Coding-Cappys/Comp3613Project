@@ -3,6 +3,7 @@
 | Command | Description |
 |---------|-------------|
 | `flask init` | Creates and initializes the database |
+| `flask listUsers` | Lists all users in the database |
 | `flask listStaff` | Lists all staff in the database |
 | `flask listStudents` | Lists all students in the database |
 | `flask listRequests` | Lists all requests in the database |
