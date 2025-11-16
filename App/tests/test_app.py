@@ -150,13 +150,27 @@ class LoggedHoursUnitTests(unittest.TestCase):
         self.assertIn("2", rep)
         self.assertIn("20", rep)
         
-
-
+class ActivityLogUnitTests(unittest.TestCase):
     
+    def test_init_activity_log(self):
+        log = ActivityLog(student_id=1, category='hours', detail='Logged 5 hours')
+        self.assertEqual(log.student_id, 1)
+        self.assertEqual(log.category, 'hours')
+        self.assertEqual(log.detail, 'Logged 5 hours')
+    
+    def test_activity_log_to_dict(self):
+        log = ActivityLog(student_id=2, category='milestone', detail='10 Hours Milestone')
+        log_dict = log.to_dict()
+        self.assertEqual(log_dict['student_id'], 2)
+        self.assertEqual(log_dict['category'], 'milestone')
+        self.assertEqual(log_dict['detail'], '10 Hours Milestone')
+        self.assertIn('created_at', log_dict)
 
-
-
-
+class ActivityObserverUnitTests(unittest.TestCase):
+    
+    def test_observer_creation(self):
+        observer = ActivityObserver()
+        self.assertIsNotNone(observer)
 
 
 # '''
