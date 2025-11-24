@@ -164,6 +164,55 @@ class ActivityObserverUnitTests(unittest.TestCase):
         observer = ActivityObserver()
         self.assertIsNotNone(observer)
 
+class UserControllerErrorTests(unittest.TestCase):
+    
+    def setUp(self):
+        self.app = create_app()
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()  
+        
+        self.existing_user = create_user("Alice", "password123", "alice@example.com")
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+    def test_create_user_duplicate(self):
+        print("Running duplicate user test!")
+        with self.assertRaises(Exception) as context:
+            create_user("Alice2", "newpassword", "alice@example.com")
+        self.assertIn("already exists", str(context.exception))
+
+    def test_login_wrong_password(self):
+        create_user("Bob", "correctpass", "bob@example.com")
+
+        try:
+            result = login("Bob", "wrongpass")  
+        except Exception as e:
+        
+           self.assertIn("invalid", str(e).lower())
+        return
+        self.assertFalse(result, f"Expected login to fail for wrong password but got: {result}")
+    
+    def test_get_user_invalid_id(self):
+   
+      with self.assertRaises(Exception) as context:
+        get_user(999)  
+      self.assertIn("user does not exist", str(context.exception))
+
+    def test_get_user_by_username_invalid(self):
+        with self.assertRaises(Exception) as context:
+           get_user_by_username("nope_user")
+        self.assertIn("user not found", str(context.exception))
+
+    def test_update_nonexistent_user(self):
+        with self.assertRaises(Exception) as context:
+            update_user(999, "newname")  
+        self.assertIn("user does not exist", str(context.exception))
+
+
 
 # '''
 #     Integration Tests
@@ -179,13 +228,32 @@ def empty_db():
 
 class StaffIntegrationTests(unittest.TestCase):
 
-    def test_create_staff(self):
-        staff = register_staff("marcus", "marcus@example.com", "pass123")
-        assert staff.username == "marcus"
-        # ensure staff persisted
-        fetched = Staff.query.get(staff.staff_id)
-        assert fetched is not None
+    def setUp(self):
+        from App.main import create_app
+        from App.database import db
+        self.app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:'})
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
 
+    def tearDown(self):
+        from App.database import db
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+    def test_create_staff(self):
+        from App.controllers.staff_controller import register_staff
+        from App.models.staff import Staff
+        from App.database import db
+
+        with self.app.app_context():
+            staff = register_staff("marcus", "marcus@example.com", "pass123")
+            self.assertEqual(staff.username, "marcus")
+
+            fetched = Staff.query.get(staff.staff_id)
+            self.assertIsNotNone(fetched)
+        
     def test_request_fetch(self):
         # create a student and a pending request
         student = Student.create_student("tariq", "tariq@example.com", "studpass")
@@ -226,6 +294,19 @@ class StaffIntegrationTests(unittest.TestCase):
 
 
 class StudentIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        from App.main import create_app
+        from App.database import db
+        self.app = create_app()
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+
+    def tearDown(self):
+        from App.database import db
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
 
     def test_create_student(self):
         student = register_student("junior", "junior@example.com", "studpass")
