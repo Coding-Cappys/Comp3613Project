@@ -355,7 +355,9 @@ def user_tests_command(type):
     if type == "unit":
         sys.exit(pytest.main(["-k", "UserUnitTests or StudentUnitTests or StaffUnitTests or RequestUnitTests or LoggedHoursUnitTests"]))
     elif type == "int":
-        sys.exit(pytest.main(["-k", "UserIntegrationTests or StudentIntegrationTests or StaffIntegrationTests "]))
+        sys.exit(pytest.main(["-k", "UserIntegrationTests or StudentIntegrationTests or StaffIntegrationTests"]))
+    elif type == "edge":
+        sys.exit(pytest.main(["-k", "EdgeCaseTests"]))
     else:
         sys.exit(pytest.main(["-k", "App"]))
 

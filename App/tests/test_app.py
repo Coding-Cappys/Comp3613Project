@@ -346,3 +346,27 @@ class StudentIntegrationTests(unittest.TestCase):
         milestone_details = [h['detail'] for h in history if h['category'] == 'milestone']
         assert any('10 Hours Milestone' in detail for detail in milestone_details)
 
+
+'''
+   Unit Edge Case Tests
+'''
+class EdgeCaseTests(unittest.TestCase):
+
+    #Duplicate Student Enteries
+    def test_duplicate_student_creation(self):
+        student1 = Student.create_student("alex", "alex@gmail.com", "alexpass")
+        student2 = Student.create_student("alex", "alex@gmail.com", "alexpass")
+        self.assertIsNotNone(student1)
+        self.assertIsNone(student2)  # assuming create_student returns None on duplicate
+
+
+    #Empty Student Data
+    def test_empty_student_creation(self):
+        student1 = Student.create_student("", "test@mail.com", "testpass")
+        student2 = Student.create_student("test", "", "testpass")
+        student3 = Student.create_student("test", "test@mail.com", "")
+        self.assertIsNone(student1)
+        self.assertIsNone(student2)
+        self.assertIsNone(student3) 
+
+

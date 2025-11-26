@@ -1,5 +1,6 @@
 from App.database import db
 from .user import User
+from sqlalchemy.exc import IntegrityError
 
 class Student(User):
 
@@ -36,11 +37,23 @@ class Student(User):
     
     # Method to create a new student
     def create_student(username, email, password):
-        newstudent = Student(username=username, email=email, password=password)
-        db.session.add(newstudent)
-        db.session.commit()
-        return newstudent
-    
+
+        if not username or not username.strip():
+            return print("Username cannot be empty")
+        if not email or not email.strip():
+            return print("Email cannot be empty")
+        if not password or not password.strip():
+            return print("Password cannot be empty")
+
+        try:
+            newstudent = Student(username=username, email=email, password=password)
+            db.session.add(newstudent)
+            db.session.commit()
+            return newstudent
+        except IntegrityError:
+            db.session.rollback()
+            return None
+
     # Method for student to request hours
     def request_hours_confirmation(self, hours):
         from App.models import Request
