@@ -358,6 +358,7 @@ class StudentEdgeCaseTests(unittest.TestCase):
         self.assertIsNotNone(student1)
         self.assertIsNone(student2)
 
+
     #Empty Student Data
     def test_empty_student_creation(self):
         student1 = Student.create_student("", "teststudent@mail.com", "teststudetpass")
@@ -367,6 +368,17 @@ class StudentEdgeCaseTests(unittest.TestCase):
         self.assertIsNone(student2)
         self.assertIsNone(student3) 
 
+
+        #Invalid Hours Requested
+    def test_invalid_hours_requested(self):
+        student = Student.create_student("sara", "sara@mail.com", "sarapass")
+        req1 = student.request_hours_confirmation(-5)
+        req2 = student.request_hours_confirmation(0)
+        #req3 = student.request_hours_confirmation("five")
+
+        self.assertIsNone(req1)
+        self.assertIsNone(req2)
+        #self.assertIsNone(req3)
 
 class StaffEdgeCaseTests(unittest.TestCase):
     #Duplicate Staff Enteries
@@ -385,18 +397,6 @@ class StaffEdgeCaseTests(unittest.TestCase):
         self.assertIsNone(staff1)
         self.assertIsNone(staff2)
         self.assertIsNone(staff3)
-
-    
-    #Invalid Hours Requested
-    def test_invalid_hours_requested(self):
-        student = Student.create_student("sara", "sara@mail.com", "sarapass")
-        req1 = student.request_hours_confirmation(-5)
-        req2 = student.request_hours_confirmation(0)
-        #req3 = student.request_hours_confirmation("five")
-
-        self.assertIsNone(req1)
-        self.assertIsNone(req2)
-        #self.assertIsNone(req3)
 
     
     #Approve already processed request
