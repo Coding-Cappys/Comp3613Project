@@ -357,16 +357,30 @@ class EdgeCaseTests(unittest.TestCase):
         student1 = Student.create_student("alex", "alex@gmail.com", "alexpass")
         student2 = Student.create_student("alex", "alex@gmail.com", "alexpass")
         self.assertIsNotNone(student1)
-        self.assertIsNone(student2)  # assuming create_student returns None on duplicate
-
+        self.assertIsNone(student2)
+        
+    #Duplicate Staff Enteries
+    def test_duplicate_staff_creation(self):
+        staff1 = Staff.create_staff("alexio","alexio@mail.com","alexiopass")
+        staff2 = Staff.create_staff("alexio","alexio@mail.com","alexiopass")
+        self.assertIsNotNone(staff1)
+        self.assertIsNone(staff2)
 
     #Empty Student Data
     def test_empty_student_creation(self):
-        student1 = Student.create_student("", "test@mail.com", "testpass")
-        student2 = Student.create_student("test", "", "testpass")
-        student3 = Student.create_student("test", "test@mail.com", "")
+        student1 = Student.create_student("", "teststudent@mail.com", "teststudetpass")
+        student2 = Student.create_student("teststudent", "", "teststudentpass")
+        student3 = Student.create_student("teststudent", "teststudent@mail.com", "")
         self.assertIsNone(student1)
         self.assertIsNone(student2)
         self.assertIsNone(student3) 
 
+    #Empty Staff Data
+    def test_empty_staff_creation(self):
+        staff1 = Staff.create_staff("","teststaff@mail.com","teststaffpass")
+        staff2 = Staff.create_staff("testStaff","","teststaffpass")
+        staff3 = Staff.create_staff("testStaff","teststaff@mail.com","")
+        self.assertIsNone(staff1)
+        self.assertIsNone(staff2)
+        self.assertIsNone(staff3)
 
