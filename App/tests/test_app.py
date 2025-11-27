@@ -347,9 +347,13 @@ class StudentIntegrationTests(unittest.TestCase):
         assert any('10 Hours Milestone' in detail for detail in milestone_details)
 
 
+
 '''
+
    Unit Edge Case Tests
+
 '''
+
 class StudentEdgeCaseTests(unittest.TestCase):
     #Duplicate Student Enteries
     def test_duplicate_student_creation(self):
