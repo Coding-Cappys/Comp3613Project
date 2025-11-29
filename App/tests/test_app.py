@@ -49,6 +49,8 @@ class UserUnitTests(unittest.TestCase):
         Testuser.set_password(new_password)
         assert Testuser.check_password(new_password)
 
+  
+
 class StaffUnitTests(unittest.TestCase):
 
     def test_init_staff(self):
@@ -140,6 +142,11 @@ class LoggedHoursUnitTests(unittest.TestCase):
         self.assertIn("2", rep)
         self.assertIn("20", rep)
         
+class UserEdgeCaseTests(unittest.TestCase):
+
+    def test_create_user_empty_password(self):
+        user = User(username="emptyPass", email="empty@domain.com", password="", role="student") 
+        self.assertFalse(user.check_password("anything"))
 
 
     
