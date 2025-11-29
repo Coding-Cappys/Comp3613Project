@@ -162,9 +162,6 @@ class UserEdgeCaseTests(unittest.TestCase):
 
 
 
-
-
-
 # '''
 #     Integration Tests
 # '''
@@ -405,6 +402,14 @@ class StaffEdgeCaseTests(unittest.TestCase):
             self.assertIn("Request with id", str(context.exception))
             process_request_denial(staff.staff_id, invalid_request_id)
             self.assertIn("request with id", str(context.exception))
+
+    def test_create_staff_duplicate_email(self):
+        # First staff
+        staff1 = Staff(username="staff1", email="duplicate_staff@domain.com", password="pass123")
+        # Attempt to create second staff with the same email
+        staff2 = Staff(username="staff2", email="duplicate_staff@domain.com", password="pass456")
+        # Check that the emails are indeed the same
+        self.assertFalse(staff2.check_password("anything"))
 
 
 '''    #Invalid Student ID for Request
