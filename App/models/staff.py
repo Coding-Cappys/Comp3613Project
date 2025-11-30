@@ -16,7 +16,9 @@ class Staff(User):
     }
     #calls parent constructor
     def __init__(self, username, email, password):
-       super().__init__(username, email, password, role="staff")
+        if "@" not in email:
+            raise ValueError("Invalid email address")
+        super().__init__(username, email, password, role="staff")
 
     def __repr__(self):
         
@@ -30,13 +32,14 @@ class Staff(User):
         }
     
     # Method to create a new staff member
+    @staticmethod
     def create_staff(username, email, password):
         if not username or not username.strip():
-            return print("Username cannot be empty")
-        if not email or not email.strip():
-            return print("Email cannot be empty")
+            return None
+        if not email or not email.strip() or "@" not in email:
+            return None
         if not password or not password.strip():
-            return print("Password cannot be empty")
+            return None
         try:
             newstaff = Staff(username=username, email=email, password=password)
             db.session.add(newstaff)

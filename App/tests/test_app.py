@@ -403,6 +403,7 @@ class StaffEdgeCaseTests(unittest.TestCase):
             process_request_denial(staff.staff_id, invalid_request_id)
             self.assertIn("request with id", str(context.exception))
 
+    #Test creating a user with duplicate email
     def test_create_staff_duplicate_email(self):
         # First staff
         staff1 = Staff(username="staff1", email="duplicate_staff@domain.com", password="pass123")
@@ -410,6 +411,11 @@ class StaffEdgeCaseTests(unittest.TestCase):
         staff2 = Staff(username="staff2", email="duplicate_staff@domain.com", password="pass456")
         # Check that the emails are indeed the same
         self.assertFalse(staff2.check_password("anything"))
+
+    # Test registering staff with invalid email format
+    def test_create_staff_invalid_email(self):
+        with self.assertRaises(ValueError):
+            Staff(username="staff_invalid", email="invalidemail", password="pass123")
 
 
 '''    #Invalid Student ID for Request
