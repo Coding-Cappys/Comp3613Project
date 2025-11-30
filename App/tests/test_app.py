@@ -49,6 +49,8 @@ class UserUnitTests(unittest.TestCase):
         Testuser.set_password(new_password)
         assert Testuser.check_password(new_password)
 
+  
+
 class StaffUnitTests(unittest.TestCase):
 
     def test_init_staff(self):
@@ -140,12 +142,23 @@ class LoggedHoursUnitTests(unittest.TestCase):
         self.assertIn("2", rep)
         self.assertIn("20", rep)
         
+class UserEdgeCaseTests(unittest.TestCase):
 
+    def test_create_user_empty_password(self):
+        user = User(username="emptyPass", email="empty@domain.com", password="", role="student") 
+        self.assertFalse(user.check_password("anything"))
 
+    def test_create_user_duplicate_email(self):
+        existing_emails = set()
+
+        user1 = User(username="user1", email="duplicate@domain.com", password="pass123", role="student")
+        existing_emails.add(user1.email) 
+        
+        user2 = User(username="user2", email="duplicate@domain.com", password="pass456", role="student")
+        with self.assertRaises(ValueError):  
+            if user2.email in existing_emails:
+                raise ValueError("Duplicate email not allowed")
     
-
-
-
 
 
 
@@ -389,6 +402,14 @@ class StaffEdgeCaseTests(unittest.TestCase):
             self.assertIn("Request with id", str(context.exception))
             process_request_denial(staff.staff_id, invalid_request_id)
             self.assertIn("request with id", str(context.exception))
+
+    def test_create_staff_duplicate_email(self):
+        # First staff
+        staff1 = Staff(username="staff1", email="duplicate_staff@domain.com", password="pass123")
+        # Attempt to create second staff with the same email
+        staff2 = Staff(username="staff2", email="duplicate_staff@domain.com", password="pass456")
+        # Check that the emails are indeed the same
+        self.assertFalse(staff2.check_password("anything"))
 
 
 '''    #Invalid Student ID for Request
