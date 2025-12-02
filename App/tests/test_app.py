@@ -221,6 +221,46 @@ class StaffIntegrationTests(unittest.TestCase):
         assert result['denial_successful'] is True
         assert result['request'].status == 'denied'
 
+    def test_batch_approval_multiple_requests(self):
+        #Staff approves multiple requests for the same student sequentially"""
+       
+        # Clean previous data
+        LoggedHours.query.delete()
+        Request.query.delete()
+        Student.query.delete()
+        Staff.query.delete()
+        db.session.commit()
+
+        # Create a student
+        student = Student.create_student("batch_student", "batch@example.com", "pass")
+
+        # Create a staff member
+        staff = Staff.create_staff("approver", "staff@example.com", "pass")
+        db.session.commit()
+
+        # Create multiple pending requests for the student
+        req1 = create_hours_request(student.student_id, 3.0)
+        req2 = create_hours_request(student.student_id, 4.5)
+        req3 = create_hours_request(student.student_id, 2.0)
+        db.session.add_all([req1, req2, req3])
+        db.session.commit()
+
+        # Approve requests one by one
+        for req in [req1, req2, req3]:
+            result = process_request_approval(staff.staff_id, req.id)
+            # Verify each request is approved
+            assert result['request'].status == 'approved'
+            # Verify logged hours recorded correctly
+            logged = result.get('logged_hours')
+            assert logged is not None
+            assert logged.hours == req.hours
+            assert logged.student_id == student.student_id
+            assert logged.staff_id == staff.staff_id
+
+        # Verify total approved hours
+        name, total = get_approved_hours(student.student_id)
+        assert total == 3.0 + 4.5 + 2.0
+
 
 class StudentIntegrationTests(unittest.TestCase):
 
@@ -283,6 +323,95 @@ class StudentIntegrationTests(unittest.TestCase):
         # assert relative ordering: zara (10) > omar (5) > leon (1)
         assert names.index('zara') < names.index('omar') < names.index('leon')
 
+    def test_no_accolades_below_first_milestone(self):
+       #Logging hours does NOT trigger any accolades if below the first milestone
+       # Clean any previous test data
+        LoggedHours.query.delete()
+        Student.query.delete()
+        User.query.filter_by(role='staff').delete() 
+        db.session.commit() 
+
+        # Create a student
+        student = Student.create_student("below_milestone", "below@example.com", "pass")
+    
+        # Create staff to approve it
+        staff = Staff.create_staff("approver", "app@example.com", "pass")
+        
+        # Log hours BELOW 10 (first milestone) - e.g., 5 hours
+        db.session.add(LoggedHours(
+        student_id=student.student_id, 
+        staff_id=staff.staff_id,
+        hours=5.0,  # LESS than 10
+        status='approved'
+        ))
+        db.session.commit()
+    
+        # Check accolades
+        accolades = fetch_accolades(student.student_id)
+    
+        # Should be EMPTY - NO accolades triggered
+        assert accolades == []
+
+    def test_fetch_only_own_requests(self):
+        # Clean previous data
+        Student.query.delete()
+        Staff.query.delete() 
+        db.session.commit()
+
+        # Create students
+        student1 = Student.create_student("alice", "alice@example.com", "pass")
+        student2 = Student.create_student("bob", "bob@example.com", "pass")
+
+        # Create requests
+        req1 = student1.request_hours_confirmation(10.0)
+        req2 = student2.request_hours_confirmation(5.0)
+        db.session.add_all([req1, req2])
+        db.session.commit()
+
+        # Fetch only student1's requests
+        student1_requests = fetch_requests(student1.student_id)
+
+        # Assertions
+        assert len(student1_requests) == 1
+        assert student1_requests[0].student_id == student1.student_id
+        assert student1_requests[0].hours == 10.0
+
+    def test_student_with_zero_hours_in_leaderboard(self):
+        # Clean previous data
+        LoggedHours.query.delete()
+        Student.query.delete()
+        Staff.query.delete()  
+        db.session.commit()
+
+        # Create students
+        student1 = Student.create_student("active", "active@example.com", "pass")
+        student2 = Student.create_student("inactive", "inactive@example.com", "pass")
+
+        # Create a staff member for the staff_id
+        staff = Staff("dummy_staff", "staff@example.com", "pass")
+        db.session.add(staff)
+        db.session.commit()
+
+       # Add approved hours only for student1
+        db.session.add(LoggedHours(
+          student_id=student1.student_id, 
+          staff_id=staff.staff_id,  # Add staff_id
+          hours=10.0, 
+          status='approved'
+        ))
+        db.session.commit()
+
+        # Generate leaderboard
+        leaderboard = generate_leaderboard()
+
+        # Check both students appear
+        names = [entry['name'] for entry in leaderboard]
+        totals = {entry['name']: entry['hours'] for entry in leaderboard}
+
+        assert "active" in names
+        assert "inactive" in names
+        assert totals["active"] == 10.0
+        assert totals["inactive"] == 0.0  # zero hours
 
 '''
 
@@ -403,6 +532,7 @@ class StaffEdgeCaseTests(unittest.TestCase):
             process_request_denial(staff.staff_id, invalid_request_id)
             self.assertIn("request with id", str(context.exception))
 
+    #Test creating a user with duplicate email
     def test_create_staff_duplicate_email(self):
         # First staff
         staff1 = Staff(username="staff1", email="duplicate_staff@domain.com", password="pass123")
@@ -410,6 +540,11 @@ class StaffEdgeCaseTests(unittest.TestCase):
         staff2 = Staff(username="staff2", email="duplicate_staff@domain.com", password="pass456")
         # Check that the emails are indeed the same
         self.assertFalse(staff2.check_password("anything"))
+
+    # Test registering staff with invalid email format
+    def test_create_staff_invalid_email(self):
+        with self.assertRaises(ValueError):
+            Staff(username="staff_invalid", email="invalidemail", password="pass123")
 
 
 '''    #Invalid Student ID for Request
