@@ -36,8 +36,27 @@ def get_users_action():
 @user_views.route('/api/users', methods=['POST'])
 def create_user_endpoint():
     data = request.form
-    user = create_user(data['username'], data['password'])
-    return jsonify({'message': f"user {user.username} created with id {user.id}"})
+
+    required = ['username', 'password', 'email']
+    for field in required:
+        if field not in data:
+            return jsonify({'message': f"Missing required field: {field}"}), 400
+
+    existing = User.query.filter_by(email=data["email"]).first()
+    if existing:
+        return jsonify({"message": "User with this email already exists"}), 400
+
+    user = create_user(
+        data['username'],
+        data['password'],
+        data['email']
+    )
+
+    return jsonify({
+        'message': f"user {user.username} created with id {user.user_id}",
+        'id': user.user_id
+    }), 201
+
 
 @user_views.route('/api/create_Student', methods=['POST'])
 def create_student_endpoint():
